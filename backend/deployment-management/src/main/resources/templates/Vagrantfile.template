@@ -1,0 +1,155 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # Box paramétré dynamiquement
+  config.vm.box = "{{OS_BOX}}"
+
+  # Réseau ponté (public_network) spécifiquement sur eth1
+  config.vm.network "public_network",
+  bridge: [
+    "Realtek 8821CE Wireless LAN 802.11ac PCI-E NIC",
+  ],
+  dev: "eth1"
+
+  # Installation des paquets de base adaptés selon l'OS
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "=== Mise à jour du système et installation des outils ==="
+
+    # Détection du système d'exploitation
+    if [ -f /etc/debian_version ]; then
+      # Debian/Ubuntu
+      sudo apt-get update -y
+      sudo apt-get install -y openssh-server
+    elif [ -f /etc/redhat-release ]; then
+      # CentOS/RHEL/Fedora
+      sudo yum update -y
+      sudo yum install -y openssh-server
+    elif [ -f /etc/alpine-release ]; then
+      # Alpine
+      sudo apk update
+      sudo apk add openssh
+    else
+      echo "OS non reconnu, installation manuelle requise"
+    fi
+  SHELL
+
+  # Création de l'utilisateur - exécuté en tant que script privilégié
+  config.vm.provision "shell", privileged: true, inline: <<-SHELL
+    echo "=== Création de l'utilisateur {{USERNAME}} ==="
+
+    # Vérifier si l'utilisateur existe déjà
+    if id "{{USERNAME}}" &>/dev/null; then
+      echo "L'utilisateur {{USERNAME}} existe déjà. Suppression..."
+      userdel -r "{{USERNAME}}"
+    fi
+
+    # Créer l'utilisateur
+    useradd -m -s /bin/bash "{{USERNAME}}" || adduser -m -s /bin/bash "{{USERNAME}}"
+
+    # Définir le mot de passe (méthode qui fonctionne sur la plupart des distributions)
+    echo "{{USERNAME}}:{{PASSWORD}}" | chpasswd
+
+    # Ajouter aux groupes sudo/wheel selon la distribution
+    if grep -q "wheel" /etc/group; then
+      # Pour CentOS/RHEL/Fedora
+      usermod -aG wheel "{{USERNAME}}"
+    else
+      # Pour Ubuntu/Debian
+      usermod -aG sudo "{{USERNAME}}" || adduser "{{USERNAME}}" sudo
+    fi
+
+    # Permettre à l'utilisateur d'utiliser sudo sans mot de passe (optionnel)
+    echo "{{USERNAME}} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/{{USERNAME}}
+    chmod 0440 /etc/sudoers.d/{{USERNAME}}
+
+    echo "Utilisateur {{USERNAME}} créé avec succès"
+  SHELL
+
+  # Configuration SSH - exécuté en tant que script privilégié
+  config.vm.provision "shell", privileged: true, inline: <<-SHELL
+    echo "=== Configuration du service SSH ==="
+
+    # Configuration pour permettre l'authentification par mot de passe
+    if [ -f /etc/ssh/sshd_config ]; then
+      echo "Modification de la configuration SSH pour permettre l'authentification par mot de passe..."
+      sudo sed -i 's/^#\\?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+      sudo sed -i 's/^#\\?ChallengeResponseAuthentication .*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+      sudo sed -i 's/^#\\?PubkeyAuthentication .*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+    fi
+
+    # Activation et redémarrage de SSH
+    if command -v systemctl &>/dev/null; then
+      # Pour les systèmes utilisant systemd
+      systemctl enable ssh || systemctl enable sshd
+      systemctl restart ssh || systemctl restart sshd
+    else
+      # Pour les systèmes plus anciens
+      service ssh restart || service sshd restart || rc-service sshd restart
+    fi
+
+    # Création du fichier IP - spécifiquement pour eth1
+    ip_address=$(ip -4 addr show eth1 | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n1)
+
+    # Si eth1 n'a pas d'adresse IP, essayer une approche différente
+    if [ -z "$ip_address" ]; then
+      echo "Interface eth1 non trouvée, recherche d'autres interfaces réseau..."
+      # Obtenir la liste des interfaces et exclure lo, eth0
+      interfaces=$(ip -o link show | awk -F': ' '{print $2}' | grep -v "lo" | grep -v "eth0")
+
+      for iface in $interfaces; do
+        ip_check=$(ip -4 addr show $iface | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n1)
+        if [ ! -z "$ip_check" ]; then
+          ip_address=$ip_check
+          echo "Utilisation de l'interface $iface avec IP: $ip_address"
+          break
+        fi
+      done
+    fi
+
+    echo "VM_IP_ADDRESS=${ip_address}" > /vagrant/vm_ip.txt
+    echo "VM démarrée avec l'adresse IP: ${ip_address}" > /vagrant/startup.log
+    echo "Utilisateur: {{USERNAME}}, Mot de passe: {{PASSWORD}}" >> /vagrant/startup.log
+    echo "Interface réseau utilisée: $(ip -o link show | grep "$ip_address" | awk -F': ' '{print $2}')" >> /vagrant/startup.log
+  SHELL
+
+  # Script d'exécution au démarrage de la VM (always run)
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    echo "VM redémarrée à $(date)" >> /vagrant/startup.log
+
+    # Afficher l'IP de eth1 à chaque démarrage
+    ip_eth1=$(ip -4 addr show eth1 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n1)
+    if [ ! -z "$ip_eth1" ]; then
+      echo "Adresse IP de eth1: $ip_eth1" >> /vagrant/startup.log
+    else
+      echo "eth1 non disponible ou sans adresse IP" >> /vagrant/startup.log
+      echo "Interfaces disponibles:" >> /vagrant/startup.log
+      ip -br addr | grep -v "lo" >> /vagrant/startup.log
+    fi
+  SHELL
+
+  # Configuration du provider VirtualBox avec ressources personnalisables
+  config.vm.provider "virtualbox" do |vb|
+    vb.name   = "{{VM_NAME}}"
+    vb.memory = {{VM_MEMORY}} # Mémoire RAM en MB (paramétrable)
+    vb.cpus   = {{VM_CPUS}}   # Nombre de vCPUs (paramétrable)
+    vb.gui = false
+
+    # Configuration du disque dur principal
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+
+    # Configuration du stockage supplémentaire si demandé
+    if {{VM_EXTRA_DISK_SIZE}} > 0
+      # Chemin du disque supplémentaire
+      extra_disk_path = File.join(File.dirname(File.expand_path(__FILE__)), "{{VM_NAME}}_extra_disk.vdi")
+
+      # Créer le disque uniquement s'il n'existe pas déjà
+      unless File.exist?(extra_disk_path)
+        vb.customize ["createmedium", "disk", "--filename", extra_disk_path, "--size", {{VM_EXTRA_DISK_SIZE}} * 1024]
+      end
+
+      # Attacher le disque à la VM
+      vb.customize ["storageattach", :id, "--storagectl", "SATA Controller", "--port", 1, "--device", 0, "--type", "hdd", "--medium", extra_disk_path]
+    end
+  end
+end

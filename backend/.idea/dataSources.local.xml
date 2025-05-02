@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="dataSourceStorageLocal" created-in="IU-251.23774.435">
+    <data-source name="deployment_db@localhost" uuid="d3322ee5-fed3-41e6-a726-b72cf85f45f3">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="POSTGRES" />
+      <secret-storage>master_key</secret-storage>
+      <user-name>postgres</user-name>
+      <schema-mapping />
+    </data-source>
+    <data-source name="deployment_db@localhsot" uuid="7069fb79-8570-4568-9560-8acf86585b05">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="POSTGRES" />
+      <user-name>postgres</user-name>
+      <schema-mapping />
+    </data-source>
+  </component>
+</project>
