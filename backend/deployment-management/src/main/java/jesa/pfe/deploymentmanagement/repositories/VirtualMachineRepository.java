@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface VirtualMachineRepository extends DeployableUnitRepository {
@@ -28,4 +29,8 @@ public interface VirtualMachineRepository extends DeployableUnitRepository {
     List<VirtualMachine> findByIpAddressContaining(@Param("ipPattern") String ipPattern);
 
     boolean existsByName(String vmName);
+
+    Optional<VirtualMachine> findByName(String vmName);
+
+    void deleteByName(String vmName);
 }

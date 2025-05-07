@@ -3,6 +3,8 @@ package jesa.pfe.deploymentmanagement.entities;
 
 import jakarta.persistence.Entity;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -23,4 +25,6 @@ public class VirtualMachine extends DeployableUnit{
     private String operatingSystem;
     private String ipAddress;
     private LocalDateTime createdAt;
+
+    private String status;
 }

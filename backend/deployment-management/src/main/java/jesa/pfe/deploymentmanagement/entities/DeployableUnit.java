@@ -3,6 +3,7 @@ package jesa.pfe.deploymentmanagement.entities;
 
 
 import jakarta.persistence.*;
+import jesa.pfe.deploymentmanagement.enums.DeploymentType;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -21,5 +22,6 @@ public class  DeployableUnit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String name;
+
     
 }

@@ -1,158 +1,47 @@
 package jesa.pfe.deploymentmanagement.controllers;
-//
-//
-//import jesa.pfe.deploymentmanagement.entities.VirtualMachine;
-//import jesa.pfe.deploymentmanagement.services.VirtualMachineService;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.*;
-//
-//import java.util.List;
-//import java.util.Optional;
-//
-//@RestController
-//@RequestMapping("/apiEdge/virtual-machines")
-//public class VirtualMachineController {
-//
-////    /*private final VirtualMachineService virtualMachineService;
-////
-////    @Autowired
-////    public VirtualMachineController(VirtualMachineService virtualMachineService) {
-////        this.virtualMachineService = virtualMachineService;
-////    }
-////
-////
-////    /**
-////     * Get all virtual machines
-////     * @return List of all virtual machines
-////     */
-////    @GetMapping
-////    public ResponseEntity<List<VirtualMachine>> getAllVirtualMachines() {
-////        List<VirtualMachine> virtualMachines = virtualMachineService.findAllVirtualMachines();
-////        return ResponseEntity.ok(virtualMachines);
-////    }
-////
-////    /**
-////     * Get a virtual machine by ID
-////     * @param id The ID of the virtual machine
-////     * @return The virtual machine if found
-////     */
-////    @GetMapping("/{id}")
-////    public ResponseEntity<VirtualMachine> getVirtualMachineById(@PathVariable Integer id) {
-////        Optional<VirtualMachine> virtualMachine = virtualMachineService.findVirtualMachineById(id);
-////        return virtualMachine.map(ResponseEntity::ok)
-////                .orElseGet(() -> ResponseEntity.notFound().build());
-////    }
-////
-////    /**
-////     * Create a new virtual machine
-////     * @param virtualMachine The virtual machine to create
-////     * @return The created virtual machine
-////     */
-////    @PostMapping("/create-vm")
-////    public ResponseEntity<VirtualMachine> createVirtualMachine(@RequestBody VirtualMachine virtualMachine) {
-////        VirtualMachine createdVirtualMachine = virtualMachineService.saveVirtualMachine(virtualMachine);
-////        return ResponseEntity.status(HttpStatus.CREATED).body(createdVirtualMachine);
-////    }
-////
-////    /**
-////     * Update an existing virtual machine
-////     * @param id The ID of the virtual machine to update
-////     * @param virtualMachine The updated virtual machine data
-////     * @return The updated virtual machine
-////     */
-////    @PutMapping("/{id}")
-////    public ResponseEntity<VirtualMachine> updateVirtualMachine(@PathVariable Integer id, @RequestBody VirtualMachine virtualMachine) {
-////        Optional<VirtualMachine> existingVirtualMachine = virtualMachineService.findVirtualMachineById(id);
-////        if (existingVirtualMachine.isEmpty()) {
-////            return ResponseEntity.notFound().build();
-////        }
-////
-////        // Ensure the ID is set correctly
-////        virtualMachine.setId(id);
-////
-////        VirtualMachine updatedVirtualMachine = virtualMachineService.saveVirtualMachine(virtualMachine);
-////        return ResponseEntity.ok(updatedVirtualMachine);
-////    }
-////
-////    /**
-////     * Delete a virtual machine
-////     * @param id The ID of the virtual machine to delete
-////     * @return No content response
-////     */
-////    @DeleteMapping("/{id}")
-////    public ResponseEntity<Void> deleteVirtualMachine(@PathVariable Integer id) {
-////        Optional<VirtualMachine> existingVirtualMachine = virtualMachineService.findVirtualMachineById(id);
-////        if (existingVirtualMachine.isEmpty()) {
-////            return ResponseEntity.notFound().build();
-////        }
-////
-////        virtualMachineService.deleteVirtualMachine(id);
-////        return ResponseEntity.noContent().build();
-////    }
-////
-////    /**
-////     * Find virtual machines by operating system
-////     * @param os The operating system to search for
-////     * @return List of matching virtual machines
-////     */
-////    @GetMapping("/search/os/{os}")
-////    public ResponseEntity<List<VirtualMachine>> findByOperatingSystem(@PathVariable String os) {
-////        List<VirtualMachine> virtualMachines = virtualMachineService.findByOperatingSystem(os);
-////        return ResponseEntity.ok(virtualMachines);
-////    }
-////
-////    /**
-////     * Find virtual machines with minimum RAM
-////     * @param ram The minimum RAM value
-////     * @return List of matching virtual machines
-////     */
-////    @GetMapping("/search/ram/{ram}")
-////    public ResponseEntity<List<VirtualMachine>> findByMinimumRam(@PathVariable int ram) {
-////        List<VirtualMachine> virtualMachines = virtualMachineService.findByRamGreaterThanEqual(ram);
-////        return ResponseEntity.ok(virtualMachines);
-////    }
-////
-////    /**
-////     * Update IP address of a virtual machine
-////     * @param id The ID of the virtual machine
-////     * @param ipAddress The new IP address
-////     * @return The updated virtual machine
-////     */
-////    @PatchMapping("/{id}/ip")
-////    public ResponseEntity<VirtualMachine> updateIpAddress(@PathVariable Integer id, @RequestBody String ipAddress) {
-////        Optional<VirtualMachine> updatedVm = virtualMachineService.updateIpAddress(id, ipAddress);
-////        return updatedVm.map(ResponseEntity::ok)
-////                .orElseGet(() -> ResponseEntity.notFound().build());
-////    }
-//}
+
 
 
 import jesa.pfe.deploymentmanagement.entities.VirtualMachine;
 import jesa.pfe.deploymentmanagement.enums.DeploymentType;
+import jesa.pfe.deploymentmanagement.enums.VMOperationStatus;
+import jesa.pfe.deploymentmanagement.repositories.VirtualMachineRepository;
 import jesa.pfe.deploymentmanagement.services.VirtualMachineOrchestratorService;
 import jesa.pfe.deploymentmanagement.services.VirtualMachineService;
+import jesa.pfe.deploymentmanagement.services.VmControlService;
+import jesa.pfe.deploymentmanagement.services.VmNetworkService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
 @RequestMapping("/api/vms")
 public class VirtualMachineController {
+    private static final Logger logger = LoggerFactory.getLogger(VirtualMachineController.class);
+
 
     private final VirtualMachineOrchestratorService orchestratorService;
     private final VirtualMachineService vmService;
+    private final VmControlService vmControlService;
+    private final VmNetworkService vmNetworkService;
+    private final VirtualMachineRepository virtualMachineRepository;
 
     @Autowired
     public VirtualMachineController(VirtualMachineOrchestratorService orchestratorService,
-                                    VirtualMachineService vmService) {
+                                    VirtualMachineService vmService, VmControlService vmControlService, VmNetworkService vmNetworkService, VirtualMachineRepository virtualMachineRepository) {
         this.orchestratorService = orchestratorService;
         this.vmService = vmService;
+        this.vmControlService = vmControlService;
+        this.vmNetworkService = vmNetworkService;
+        this.virtualMachineRepository = virtualMachineRepository;
     }
 
     /**
@@ -195,4 +84,59 @@ public class VirtualMachineController {
         vmService.deleteVirtualMachine(id);
         return ResponseEntity.noContent().build();
     }
+
+    //control vms in server
+    @PostMapping("/control/{vmName}/start")
+    public ResponseEntity<Map<String, Object>> startVM(@PathVariable String vmName) {
+        VMOperationStatus status = vmControlService.startVM(vmName);
+        return createResponse(status, "start");
+    }
+
+
+
+    @PostMapping("/control/{vmName}/stop")
+    public ResponseEntity<Map<String, Object>> stopVM(@PathVariable String vmName) {
+        VMOperationStatus status = vmControlService.stopVM(vmName);
+        return createResponse(status, "stop");
+    }
+
+    @PostMapping("/control/{vmName}/force-stop")
+    public ResponseEntity<Map<String, Object>> forceStopVM(@PathVariable String vmName) {
+        VMOperationStatus status = vmControlService.forceStopVM(vmName);
+        return createResponse(status, "force-stop");
+    }
+
+    @DeleteMapping("/control/delete/{vmName}")
+    public ResponseEntity<Map<String, Object>> deleteVM(@PathVariable String vmName) {
+        VMOperationStatus status = vmControlService.deleteVM(vmName);
+        return createResponse(status, "delete");
+    }
+
+
+    @GetMapping("/control/status/{vmName}")
+    public ResponseEntity<Map<String, Object>> getVMStatus(@PathVariable String vmName) {
+        String status = vmControlService.getVMStatus(vmName);
+        Map<String, Object> response = new HashMap<>();
+        response.put("vmName", vmName);
+        response.put("status", status);
+        return ResponseEntity.ok(response);
+    }
+
+
+    private ResponseEntity<Map<String, Object>> createResponse(VMOperationStatus status, String operation) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("operation", operation);
+        response.put("status", status);
+
+        if (status == VMOperationStatus.SUCCESS || status == VMOperationStatus.VM_ALREADY_IN_DESIRED_STATE) {
+            return ResponseEntity.ok(response);
+        } else if (status == VMOperationStatus.VM_NOT_FOUND) {
+            response.put("message", "Virtual machine not found in database");
+            return ResponseEntity.notFound().build();
+        } else {
+            response.put("message", "Operation failed: " + status);
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
 }
