@@ -27,4 +27,5 @@ public class VirtualMachine extends DeployableUnit{
     private LocalDateTime createdAt;
 
     private String status;
+    private String edgeServerName;
 }

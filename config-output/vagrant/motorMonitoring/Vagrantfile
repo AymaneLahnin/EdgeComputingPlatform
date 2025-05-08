@@ -36,34 +36,34 @@ Vagrant.configure("2") do |config|
 
   # Création de l'utilisateur - exécuté en tant que script privilégié
   config.vm.provision "shell", privileged: true, inline: <<-SHELL
-    echo "=== Création de l'utilisateur oussama ==="
+    echo "=== Création de l'utilisateur angelo ==="
 
     # Vérifier si l'utilisateur existe déjà
-    if id "oussama" &>/dev/null; then
-      echo "L'utilisateur oussama existe déjà. Suppression..."
-      userdel -r "oussama"
+    if id "angelo" &>/dev/null; then
+      echo "L'utilisateur angelo existe déjà. Suppression..."
+      userdel -r "angelo"
     fi
 
     # Créer l'utilisateur
-    useradd -m -s /bin/bash "oussama" || adduser -m -s /bin/bash "oussama"
+    useradd -m -s /bin/bash "angelo" || adduser -m -s /bin/bash "angelo"
 
     # Définir le mot de passe (méthode qui fonctionne sur la plupart des distributions)
-    echo "oussama:pwd" | chpasswd
+    echo "angelo:pwd" | chpasswd
 
     # Ajouter aux groupes sudo/wheel selon la distribution
     if grep -q "wheel" /etc/group; then
       # Pour CentOS/RHEL/Fedora
-      usermod -aG wheel "oussama"
+      usermod -aG wheel "angelo"
     else
       # Pour Ubuntu/Debian
-      usermod -aG sudo "oussama" || adduser "oussama" sudo
+      usermod -aG sudo "angelo" || adduser "angelo" sudo
     fi
 
     # Permettre à l'utilisateur d'utiliser sudo sans mot de passe (optionnel)
-    echo "oussama ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/oussama
-    chmod 0440 /etc/sudoers.d/oussama
+    echo "angelo ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/angelo
+    chmod 0440 /etc/sudoers.d/angelo
 
-    echo "Utilisateur oussama créé avec succès"
+    echo "Utilisateur angelo créé avec succès"
   SHELL
 
   # Configuration SSH - exécuté en tant que script privilégié
@@ -109,7 +109,7 @@ Vagrant.configure("2") do |config|
 
     echo "VM_IP_ADDRESS=${ip_address}" > /vagrant/vm_ip.txt
     echo "VM démarrée avec l'adresse IP: ${ip_address}" > /vagrant/startup.log
-    echo "Utilisateur: oussama, Mot de passe: pwd" >> /vagrant/startup.log
+    echo "Utilisateur: angelo, Mot de passe: pwd" >> /vagrant/startup.log
     echo "Interface réseau utilisée: $(ip -o link show | grep "$ip_address" | awk -F': ' '{print $2}')" >> /vagrant/startup.log
   SHELL
 

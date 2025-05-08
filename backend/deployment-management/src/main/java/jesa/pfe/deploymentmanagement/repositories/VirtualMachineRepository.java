@@ -33,4 +33,6 @@ public interface VirtualMachineRepository extends DeployableUnitRepository {
     Optional<VirtualMachine> findByName(String vmName);
 
     void deleteByName(String vmName);
+
+    List<VirtualMachine> findByEdgeServerName(String edgeServerName);
 }

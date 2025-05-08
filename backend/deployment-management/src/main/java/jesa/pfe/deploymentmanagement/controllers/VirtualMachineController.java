@@ -3,6 +3,7 @@ package jesa.pfe.deploymentmanagement.controllers;
 
 
 import jesa.pfe.deploymentmanagement.entities.VirtualMachine;
+import jesa.pfe.deploymentmanagement.sharedmodels.VmEdgeAppresponse;
 import jesa.pfe.deploymentmanagement.enums.DeploymentType;
 import jesa.pfe.deploymentmanagement.enums.VMOperationStatus;
 import jesa.pfe.deploymentmanagement.repositories.VirtualMachineRepository;
@@ -10,11 +11,11 @@ import jesa.pfe.deploymentmanagement.services.VirtualMachineOrchestratorService;
 import jesa.pfe.deploymentmanagement.services.VirtualMachineService;
 import jesa.pfe.deploymentmanagement.services.VmControlService;
 import jesa.pfe.deploymentmanagement.services.VmNetworkService;
+import jesa.pfe.deploymentmanagement.sharedmodels.VmEdgeServerResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -22,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequestMapping("/api/vms")
 public class VirtualMachineController {
     private static final Logger logger = LoggerFactory.getLogger(VirtualMachineController.class);
@@ -64,6 +65,27 @@ public class VirtualMachineController {
     @GetMapping("/getAllVms")
     public List<VirtualMachine> listVms() {
         return vmService.findAllVirtualMachines();
+    }
+
+    /**
+     * handle vm-edgeApp association
+     */
+    @GetMapping("/vm-edgeApp/{vmName}")
+    public VmEdgeAppresponse getVmWithEdgeApp(@PathVariable String vmName) {
+        return vmService.findVmWithEdgeApp(vmName);
+    }
+
+    /***
+     * handle vm-edgeServers association
+     */
+    @GetMapping("/vm-edgeServers/{vmName}")
+    public VmEdgeServerResponse getVmWithEdgeServers(@PathVariable String vmName) {
+        return vmService.findVmWithEdgeServers(vmName);
+    }
+
+    @GetMapping("/find-vms-ByServer/{edgeServerName}")
+    public List<VirtualMachine> findVmByServer(@PathVariable String edgeServerName) {
+        return vmService.findvmByEdgseSererName(edgeServerName);
     }
 
     /**
@@ -138,5 +160,7 @@ public class VirtualMachineController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+
 
 }

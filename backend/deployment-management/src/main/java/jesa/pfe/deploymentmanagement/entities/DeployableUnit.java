@@ -15,13 +15,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 
-@Inheritance(strategy = InheritanceType.JOINED)
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuperBuilder
-public class  DeployableUnit {
+public abstract class  DeployableUnit {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
-    private String name;
+    protected String name;
 
     
 }

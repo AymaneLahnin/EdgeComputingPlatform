@@ -36,34 +36,34 @@ Vagrant.configure("2") do |config|
 
   # Création de l'utilisateur - exécuté en tant que script privilégié
   config.vm.provision "shell", privileged: true, inline: <<-SHELL
-    echo "=== Création de l'utilisateur youssef ==="
+    echo "=== Création de l'utilisateur angelo1 ==="
 
     # Vérifier si l'utilisateur existe déjà
-    if id "youssef" &>/dev/null; then
-      echo "L'utilisateur youssef existe déjà. Suppression..."
-      userdel -r "youssef"
+    if id "angelo1" &>/dev/null; then
+      echo "L'utilisateur angelo1 existe déjà. Suppression..."
+      userdel -r "angelo1"
     fi
 
     # Créer l'utilisateur
-    useradd -m -s /bin/bash "youssef" || adduser -m -s /bin/bash "youssef"
+    useradd -m -s /bin/bash "angelo1" || adduser -m -s /bin/bash "angelo1"
 
     # Définir le mot de passe (méthode qui fonctionne sur la plupart des distributions)
-    echo "youssef:pwd" | chpasswd
+    echo "angelo1:pwd" | chpasswd
 
     # Ajouter aux groupes sudo/wheel selon la distribution
     if grep -q "wheel" /etc/group; then
       # Pour CentOS/RHEL/Fedora
-      usermod -aG wheel "youssef"
+      usermod -aG wheel "angelo1"
     else
       # Pour Ubuntu/Debian
-      usermod -aG sudo "youssef" || adduser "youssef" sudo
+      usermod -aG sudo "angelo1" || adduser "angelo1" sudo
     fi
 
     # Permettre à l'utilisateur d'utiliser sudo sans mot de passe (optionnel)
-    echo "youssef ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/youssef
-    chmod 0440 /etc/sudoers.d/youssef
+    echo "angelo1 ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/angelo1
+    chmod 0440 /etc/sudoers.d/angelo1
 
-    echo "Utilisateur youssef créé avec succès"
+    echo "Utilisateur angelo1 créé avec succès"
   SHELL
 
   # Configuration SSH - exécuté en tant que script privilégié
@@ -109,7 +109,7 @@ Vagrant.configure("2") do |config|
 
     echo "VM_IP_ADDRESS=${ip_address}" > /vagrant/vm_ip.txt
     echo "VM démarrée avec l'adresse IP: ${ip_address}" > /vagrant/startup.log
-    echo "Utilisateur: youssef, Mot de passe: pwd" >> /vagrant/startup.log
+    echo "Utilisateur: angelo1, Mot de passe: pwd" >> /vagrant/startup.log
     echo "Interface réseau utilisée: $(ip -o link show | grep "$ip_address" | awk -F': ' '{print $2}')" >> /vagrant/startup.log
   SHELL
 
@@ -139,13 +139,13 @@ Vagrant.configure("2") do |config|
     vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
 
     # Configuration du stockage supplémentaire si demandé
-    if 3 > 0
+    if 5 > 0
       # Chemin du disque supplémentaire
       extra_disk_path = File.join(File.dirname(File.expand_path(__FILE__)), "vm12_extra_disk.vdi")
 
       # Créer le disque uniquement s'il n'existe pas déjà
       unless File.exist?(extra_disk_path)
-        vb.customize ["createmedium", "disk", "--filename", extra_disk_path, "--size", 3 * 1024]
+        vb.customize ["createmedium", "disk", "--filename", extra_disk_path, "--size", 5 * 1024]
       end
 
       # Attacher le disque à la VM
