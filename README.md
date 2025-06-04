@@ -11,7 +11,7 @@ Guide ultra‑succinct pour lancer les services Spring Boot dans **IntelliJ ID
 | **JDK** | 17 ou supérieure | Compiler & run Spring Boot |
 | **IntelliJ IDEA** | 2023.x (Community ou Ultimate) | IDE pour importer et exécuter les modules Maven/Gradle |
 | **Maven** | 3.9.x (si pas intégré) | Build & dependency management |
-| **Docker + Docker Compose** | 24.x | Bases de données / brokers (PostgreSQL, RabbitMQ…) |
+| **Docker + Docker Compose** | 24.x | Bases de données PostgreSQL |
 | **VirtualBox** | 7.x | Exécution des VMs créées par le service d’orchestration |
 | **Vagrant** | 2.4.x | Provisionnement automatique des VMs |
 | **Git** | 2.x | Gestion de code source |
@@ -33,8 +33,9 @@ Guide ultra‑succinct pour lancer les services Spring Boot dans **IntelliJ ID
      | discovery-service | `com.example.discovery.DiscoveryServiceApplication` | `8761` |
      | gateway-service | `com.example.gateway.GatewayServiceApplication` | `8090` |
      | edge-server-service | `com.example.edgeserver.EdgeServerServiceApplication` | `8092` |
-     | deployment-management-service | `com.example.deployment.DeploymentManagementApplication` | `8091` |
-     | *config-service* (optionnel) | `com.example.config.ConfigServiceApplication` | `8888` |
+     | deployment-management-service | `com.example.deployment.DeploymentManagementApplication` | `8090` |
+     | config-service | `com.example.config.ConfigServiceApplication` | `8888` |
+     | EdgeAppService | `com.example.config.ConfigServiceApplication` | `8091` |
 
 4. **Ordre de démarrage recommandé** :
    1. **Discovery Service** (Eureka)
